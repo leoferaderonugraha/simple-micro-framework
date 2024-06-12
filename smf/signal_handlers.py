@@ -1,6 +1,5 @@
 """Builtin http handlers"""
 
-import json
 from .context import AppContext
 from .status_codes import (
     HTTP_STATUS_NOT_FOUND,
@@ -14,7 +13,7 @@ async def page_404_handler(ctx: AppContext):
 
     return ctx \
         .set_status(HTTP_STATUS_NOT_FOUND) \
-        .create_response(json.dumps(data).encode('utf-8'), is_json=True)
+        .json(data)
 
 
 async def page_505_handler(ctx: AppContext):
@@ -24,4 +23,4 @@ async def page_505_handler(ctx: AppContext):
 
     return ctx \
         .set_status(HTTP_STATUS_INTERNAL_SERVER_ERROR) \
-        .create_response(json.dumps(data).encode('utf-8'), is_json=True)
+        .json(data)

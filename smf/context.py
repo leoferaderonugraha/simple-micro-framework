@@ -1,3 +1,4 @@
+import json
 import typing as t
 import traceback
 import sys
@@ -17,7 +18,7 @@ class AppContext:
         self.__receive = receive
         self.__send = send
 
-        # default value so we can use create_response immediately
+        # default value so we can use `AppContext.send` immediately
         self.__status_code = HTTP_STATUS_OK
         self.__headers = {
             b'content-type': b'text/plain'
@@ -32,11 +33,11 @@ class AppContext:
         self.__headers = headers
         return self
 
-    async def create_response(self,
-                              message: bytes,
-                              is_json: bool = False) -> None:
-        if is_json:
-            self.__headers[b'content-type'] = b'application/json'
+    async def send(self,
+                   message: str,
+                   content_type: str = 'text/html') -> None:
+
+        self.__headers[b'content-type'] = content_type.encode('utf-8')
 
         headers = [[k, v] for k, v in self.__headers.items()]
 
@@ -47,8 +48,12 @@ class AppContext:
         })
         await self.__send({
             'type': 'http.response.body',
-            'body': message
+            'body': message.encode('utf-8')
         })
+
+    async def json(self, message: object) -> None:
+        await self.send(json.dumps(message),
+                        content_type='application/json')
 
     def get_param(self, name: str) -> t.Any:
         params = self.__scope.get('params', {})
