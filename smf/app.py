@@ -22,7 +22,7 @@ class App:
     def __init__(self) -> None:
         self._routes: t.List[Route] = []
 
-        self.__signal_handlers: dict[int, RouteHandler] = {
+        self._signal_handlers: dict[int, RouteHandler] = {
             HTTP_STATUS_NOT_FOUND: page_404_handler,
             HTTP_STATUS_INTERNAL_SERVER_ERROR: page_505_handler,
         }
@@ -47,8 +47,8 @@ class App:
         ctx = AppContext(scope, receive, send)
 
         if matched_route is None:
-            await self.__handle(
-                self.__signal_handlers[HTTP_STATUS_NOT_FOUND],
+            await self._handle(
+                self._signal_handlers[HTTP_STATUS_NOT_FOUND],
                 ctx
             )
             return None
@@ -58,11 +58,11 @@ class App:
             return None
 
         try:
-            await self.__handle(route.get_handler(), ctx)
+            await self._handle(route.get_handler(), ctx)
         except Exception as e:
             print('exception occured:', e)
-            await self.__handle(
-                self.__signal_handlers[HTTP_STATUS_INTERNAL_SERVER_ERROR],
+            await self._handle(
+                self._signal_handlers[HTTP_STATUS_INTERNAL_SERVER_ERROR],
                 ctx
             )
 
@@ -90,9 +90,9 @@ class App:
     #     return endpoints
 
     def set_signal_handler(self, signal: int, fn: RouteHandler):
-        self.__signal_handlers[signal] = fn
+        self._signal_handlers[signal] = fn
 
-    async def __handle(self, fn: RouteHandler, ctx: AppContext):
+    async def _handle(self, fn: RouteHandler, ctx: AppContext):
         result = await fn(ctx)
         # await another returned coroutine by the handler
         # possibly like this:
