@@ -72,7 +72,11 @@ class AppContext:
         tb = traceback.extract_tb(exc_tb)
 
         stacktrace = []
+        stacktrace.append(f"{exc_type}: \"{exc_value}\"")
         for trace in tb:
-            stacktrace.append(f"File: {trace[0]} | Line: {trace[1]} | Name: {trace[2]} | Message: {trace[3]}")
+            path, line, fn, code = trace
+            stacktrace.append(
+                f"File \"{path}\", line {line}, in {fn}: \"{code}\""
+            )
 
         return stacktrace
