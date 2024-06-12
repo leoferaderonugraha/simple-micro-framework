@@ -18,11 +18,8 @@ class AppContext:
         self.__receive = receive
         self.__send = send
 
-        # default value so we can use `AppContext.send` immediately
         self.__status_code = HTTP_STATUS_OK
-        self.__headers = {
-            b'content-type': b'text/plain'
-        }
+        self.__headers = {}
         self.__stacktrace: Exception = None
 
     def set_status(self, status_code: int) -> 'AppContext':
