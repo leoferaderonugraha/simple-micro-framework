@@ -1,13 +1,13 @@
-import typing as tp
+import typing as t
 
-if tp.TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from .context import AppContext
 
-T = tp.TypeVar('T')
+T = t.TypeVar('T')
 
 Route = str
-RouteHandler = tp.Callable[['AppContext'], tp.Optional[tp.Awaitable[None]]]
+RouteHandler = t.Callable[['AppContext'], t.Optional[t.Awaitable[None]]]
 
-Scope = tp.Dict
-Receive = tp.Callable
-Send = tp.Callable
+Scope = t.Dict
+Receive = t.Callable
+Send = t.Callable

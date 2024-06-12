@@ -1,4 +1,4 @@
-import typing
+import typing as t
 import traceback
 import sys
 from .status_codes import (
@@ -50,7 +50,7 @@ class AppContext:
             'body': message
         })
 
-    def get_param(self, name: str) -> typing.Any:
+    def get_param(self, name: str) -> t.Any:
         params = self.__scope.get('params', {})
 
         return params.get(name, None)
