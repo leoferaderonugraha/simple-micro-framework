@@ -1,4 +1,5 @@
 import inspect
+import typing as t
 from .signal_handlers import (
     page_404_handler,
     page_505_handler,
@@ -8,19 +9,18 @@ from .status_codes import (
     HTTP_STATUS_NOT_FOUND,
     HTTP_STATUS_INTERNAL_SERVER_ERROR,
 )
+from .router import Route
 from .types import (
     Scope,
     Receive,
     Send,
-    Route,
     RouteHandler,
 )
 
 
 class App:
     def __init__(self) -> None:
-        self.__routes: dict[Route, RouteHandler] = {}
-        self.__route_methods: dict[str, list[str]] = {}
+        self._routes: t.List[Route] = []
 
         self.__signal_handlers: dict[int, RouteHandler] = {
             HTTP_STATUS_NOT_FOUND: page_404_handler,
@@ -33,55 +33,61 @@ class App:
                        send: Send) -> None:
         assert scope['type'] == 'http'
 
-        ctx = AppContext(scope, receive, send)
-
-        print(scope)
         path = scope['path']
+        method = scope['method']
+        matched_route = None
 
-        handler = self.__routes.get(path, None)
-        methods = self.__route_methods.get(path, ['GET'])
-
-        is_method_match = False
-        for method in methods:
-            if method == scope['method']:
-                is_method_match = True
+        for route in self._routes:
+            matched, params = route.match(path)
+            if matched:
+                matched_route = route
+                scope['params'] = params
                 break
 
-        if not is_method_match:
-            await ctx.create_response(b'Method not allowed!')
-            return None
+        ctx = AppContext(scope, receive, send)
 
-        if handler is None:
+        if matched_route is None:
             await self.__handle(
                 self.__signal_handlers[HTTP_STATUS_NOT_FOUND],
                 ctx
             )
             return None
 
+        if not matched_route.is_allowed(method):
+            await ctx.create_response(b'Method not allowed!')
+            return None
+
         try:
-            await self.__handle(handler, ctx)
+            await self.__handle(route.get_handler(), ctx)
         except Exception as e:
-            print(e)
+            print('exception occured:', e)
             await self.__handle(
                 self.__signal_handlers[HTTP_STATUS_INTERNAL_SERVER_ERROR],
                 ctx
             )
 
-    def route(self, route: str, **kwargs: dict) -> RouteHandler:
+    def route(self, path: str, **kwargs: dict) -> RouteHandler:
+        # TODO:
+        #   - handle same path different method(s), e.g:
+        #     - Route('/:id' get_handler, methods=['GET'])
+        #     - Route('/:id' put_handler, methods=['PUT'])
         def decorate(func: RouteHandler) -> RouteHandler:
-            self.__routes[route] = func
-            print(route.split('/'))
-            self.__route_methods[route] = kwargs.get('methods', [])
+            methods = kwargs.get('methods', ['GET'])
+            new_route = Route(path, func, methods=methods)
+
+            print(new_route)
+
+            self._routes.append(new_route)
             return func
         return decorate
 
-    def list_endpoints(self) -> dict:
-        endpoints = {}
+    # def list_endpoints(self) -> dict:
+    #     endpoints = {}
 
-        for k, v in self.__routes.items():
-            endpoints[k] = v.__name__
+    #     for k, v in self._routes.items():
+    #         endpoints[k] = v.__name__
 
-        return endpoints
+    #     return endpoints
 
     def set_signal_handler(self, signal: int, fn: RouteHandler):
         self.__signal_handlers[signal] = fn

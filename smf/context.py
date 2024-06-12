@@ -1,5 +1,4 @@
 import typing
-import re
 import traceback
 import sys
 from .status_codes import (
@@ -52,12 +51,9 @@ class AppContext:
         })
 
     def get_param(self, name: str) -> typing.Any:
-        pattern = re.compile(r'\:(\w+|\_)')
-        path = self.__scope['path']
+        params = self.__scope.get('params', {})
 
-        print(re.findall(pattern, path))
-
-        return path
+        return params.get(name, None)
 
     def _set_last_exception(self, err: Exception) -> None:
         self.__stacktrace = err
